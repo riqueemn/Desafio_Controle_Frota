@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Table, Button, Modal, Form, Input, Select, message } from 'antd';
 import axios from 'axios';
-import { Table, Button, Modal, Form, Input, Select, Alert, message } from 'antd';
 
 const { Option } = Select;
 
@@ -8,212 +8,200 @@ const Deliveries = () => {
   const [deliveries, setDeliveries] = useState([]);
   const [trucks, setTrucks] = useState([]);
   const [drivers, setDrivers] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({
-    truckId: '',
-    driver: '',
-    cargoType: '',
-    value: '',
-    destination: '',
-    status: 'Pendente'
-  });
-  const [error, setError] = useState('');
+  const [destinations, setDestination] = useState([]);
+  const [cargas, setCarga] = useState([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [currentDelivery, setCurrentDelivery] = useState(null);
 
   useEffect(() => {
     fetchDeliveries();
     fetchTrucks();
     fetchDrivers();
+    fetchAddresses();
+    fetchCargas();
   }, []);
 
   const fetchDeliveries = async () => {
-    try {
-      const response = await axios.get('http://localhost:3001/api/deliveries');
-      setDeliveries(response.data);
-    } catch (error) {
-      message.error('Erro ao buscar entregas.');
-    }
+    const result = await axios.get('http://localhost:3001/api/deliveries');
+    setDeliveries(result.data);
   };
 
   const fetchTrucks = async () => {
-    try {
-      const response = await axios.get('http://localhost:3001/api/trucks');
-      setTrucks(response.data);
-    } catch (error) {
-      message.error('Erro ao buscar caminhões.');
-    }
+    const result = await axios.get('http://localhost:3001/api/trucks');
+    setTrucks(result.data);
   };
 
   const fetchDrivers = async () => {
+    const result = await axios.get('http://localhost:3001/api/drivers');
+    setDrivers(result.data);
+  };
+
+  const fetchAddresses = async () => {
+    const result = await axios.get('http://localhost:3001/api/addresses');
+    setDestination(result.data);
+  };
+
+  const fetchCargas = async () => {
+    const result = await axios.get('http://localhost:3001/api/cargas');
+    setCarga(result.data);
+  };
+
+  const showModal = () => {
+    setIsModalVisible(true);
+  };
+
+  const handleCancel = () => {
+    setIsModalVisible(false);
+    setIsEditMode(false);
+    setCurrentDelivery(null);
+  };
+
+  const handleSubmit = async (values) => {
     try {
-      const response = await axios.get('http://localhost:3001/api/drivers');
-      setDrivers(response.data);
-    } catch (error) {
-      message.error('Erro ao buscar motoristas.');
-    }
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleSelectChange = (value, name) => {
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleSubmit = async () => {
-    setError('');
-    try {
-      await axios.post('http://localhost:3001/api/deliveries', formData);
+      if (isEditMode && currentDelivery) {
+        await axios.put(`http://localhost:3001/api/deliveries/${currentDelivery.id}`, values);
+        message.success('Entrega atualizada com sucesso');
+      } else {
+        await axios.post('http://localhost:3001/api/deliveries', values);
+        message.success('Entrega adicionada com sucesso');
+      }
       fetchDeliveries();
-      setShowModal(false);
-      message.success('Entrega adicionada com sucesso.');
+      handleCancel();
     } catch (error) {
-      setError(error.response?.data?.message || 'Erro ao adicionar entrega.');
+      message.error(error.response.data.message);
     }
+  };
+
+  const handleEdit = (record) => {
+    setCurrentDelivery(record);
+    setIsEditMode(true);
+    showModal();
+  };
+
+  const handleDelete = async (id) => {
+    await axios.delete(`http://localhost:3001/api/deliveries/${id}`);
+    fetchDeliveries();
   };
 
   const columns = [
-    {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-    },
-    {
-      title: 'Caminhão',
-      dataIndex: 'truckId',
-      key: 'truckId',
-    },
-    {
-      title: 'Motorista',
-      dataIndex: 'driver',
-      key: 'driver',
-    },
+    { title: 'ID', dataIndex: 'id', key: 'id' },
+    { title: 'Caminhão', dataIndex: 'truckId', key: 'truckId' },
+    { title: 'Motorista', dataIndex: 'driver', key: 'driver' },
+    
     {
       title: 'Tipo de Carga',
       dataIndex: 'cargoType',
       key: 'cargoType',
+      render: (cargoType, record) => {
+        const hasInsurance = record.hasInsurance;
+        return (
+          <>
+            {cargoType}
+            {cargoType === 'Eletrônicos' && (
+              <span style={{ marginLeft: 8 }}>
+                {hasInsurance ? (
+                  <span style={{ color: 'green', fontWeight: 'bold' }}>(Segurado)</span>
+                ) : (
+                  <span style={{ color: 'orange', fontWeight: 'bold' }}>(Não Segurado)</span>
+                )}
+              </span>
+            )}
+
+            {cargoType === 'Combustível' && (
+              <span style={{ marginLeft: 8 }}>
+                <span style={{ color: 'red', fontWeight: 'bold' }}>(Perigoso)</span>
+              </span>
+            )}
+          </>
+        );
+      },
     },
     {
       title: 'Valor',
       dataIndex: 'value',
       key: 'value',
+      render: (value) => {
+        const isValuable = value > 30000;
+        return (
+          <>
+            R$ {value}
+            {isValuable && <span style={{ color: 'gold', fontWeight: 'bold' }}> (Valiosa)</span>}
+          </>
+        );
+      },
     },
-    {
-      title: 'Destino',
-      dataIndex: 'destination',
-      key: 'destination',
-    },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-    },
-    {
-      title: 'Ações',
-      key: 'actions',
-      render: (text, record) => (
-        <>
-          <Button type="link" onClick={() => handleEdit(record)}>Editar</Button>
-          <Button type="link" danger onClick={() => handleDelete(record.id)}>Excluir</Button>
-        </>
-      ),
-    },
+    { title: 'Destino', dataIndex: 'destination', key: 'destination' },
+    { title: 'Status', dataIndex: 'status', key: 'status' },
+    { title: 'Ações', key: 'action', render: (text, record) => (
+      <>
+        <Button onClick={() => handleEdit(record)}>Editar</Button>
+        <Button onClick={() => handleDelete(record.id)} danger>Excluir</Button>
+      </>
+    ) },
   ];
-
-  const handleEdit = (record) => {
-    setFormData(record);
-    setShowModal(true);
-  };
-
-  const handleDelete = async (id) => {
-    try {
-      await axios.delete(`http://localhost:3001/api/deliveries/${id}`);
-      fetchDeliveries();
-      message.success('Entrega excluída com sucesso.');
-    } catch (error) {
-      message.error('Erro ao excluir entrega.');
-    }
-  };
 
   return (
     <div>
-      <Button type="primary" onClick={() => setShowModal(true)}>Adicionar Entrega</Button>
-      <Table dataSource={deliveries} columns={columns} rowKey="id" />
-
+      <Button type="primary" onClick={showModal}>Adicionar Entrega</Button>
+      <Table columns={columns} dataSource={deliveries} rowKey="id" />
       <Modal
-        title="Adicionar Entrega"
-        visible={showModal}
-        onCancel={() => setShowModal(false)}
-        onOk={handleSubmit}
+        title={isEditMode ? 'Editar Entrega' : 'Adicionar Entrega'}
+        visible={isModalVisible}
+        onCancel={handleCancel}
+        footer={null}
       >
-        {error && <Alert message={error} type="error" />}
-        <Form layout="vertical">
-          <Form.Item label="ID do Caminhão">
-            <Select
-              name="truckId"
-              value={formData.truckId}
-              onChange={(value) => handleSelectChange(value, 'truckId')}
-              required
-            >
-              {trucks.map((truck) => (
-                <Option key={truck.id} value={truck.id}>
-                  {truck.id} - {truck.model}
-                </Option>
+        <Form
+          initialValues={currentDelivery}
+          onFinish={handleSubmit}
+        >
+          <Form.Item name="truckId" label="Caminhão" rules={[{ required: true }]}>
+            <Select>
+              {trucks.map(truck => (
+                <Option key={truck.id} value={truck.id}>{truck.model}</Option>
               ))}
             </Select>
           </Form.Item>
-          <Form.Item label="Motorista">
-            <Select
-              name="driver"
-              value={formData.driver}
-              onChange={(value) => handleSelectChange(value, 'driver')}
-              required
-            >
-              {drivers.map((driver) => (
-                <Option key={driver.id} value={driver.name}>
-                  {driver.name}
-                </Option>
+          <Form.Item name="driver" label="Motorista" rules={[{ required: true }]}>
+            <Select>
+              {drivers.map(driver => (
+                <Option key={driver.id} value={driver.name}>{driver.name}</Option>
               ))}
             </Select>
           </Form.Item>
-          <Form.Item label="Tipo de Carga">
-            <Input
-              type="text"
-              name="cargoType"
-              value={formData.cargoType}
-              onChange={handleInputChange}
-              required
-            />
+          <Form.Item name="cargoType" label="Tipo de Carga" rules={[{ required: true }]}>
+          <Select>
+              {cargas.map(carga => (
+                <Option key={carga.id} value={carga.tipo}>{carga.tipo}</Option>
+              ))}
+          </Select>
           </Form.Item>
-          <Form.Item label="Valor">
-            <Input
-              type="number"
-              name="value"
-              value={formData.value}
-              onChange={handleInputChange}
-              required
-            />
+          <Form.Item name="value" label="Valor" rules={[{ required: true }]}>
+            <Input />
           </Form.Item>
-          <Form.Item label="Destino">
-            <Input
-              type="text"
-              name="destination"
-              value={formData.destination}
-              onChange={handleInputChange}
-              required
-            />
+          <Form.Item name="destination" label="Destino" rules={[{ required: true }]}>
+            <Select>
+              {destinations.map(destination => (
+                <Option key={destination.id} value={destination.local}>{destination.local}</Option>
+              ))}
+            </Select>
           </Form.Item>
-          <Form.Item label="Status">
-            <Select
-              name="status"
-              value={formData.status}
-              onChange={(value) => handleSelectChange(value, 'status')}
-              required
-            >
+          <Form.Item name="hasInsurance" label="Tem Seguro" rules={[{ required: true }]}>
+            <Select>
+              <Option value={true}>Sim</Option>
+              <Option value={false}>Não</Option>
+            </Select>
+          </Form.Item>
+          <Form.Item name="status" label="Status" rules={[{ required: true }]}>
+            <Select>
               <Option value="Pendente">Pendente</Option>
               <Option value="Concluída">Concluída</Option>
             </Select>
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit">
+              {isEditMode ? 'Atualizar' : 'Adicionar'}
+            </Button>
           </Form.Item>
         </Form>
       </Modal>

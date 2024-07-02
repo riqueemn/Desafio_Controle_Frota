@@ -6,6 +6,8 @@ import  Truck  from '../config/models/truck.js'
 import  Delivery  from '../config/models/delivery.js'
 import  Driver  from '../config/models/driver.js'
 import  User  from '../config/models/user.js'
+import  Address  from '../config/models/address.js'
+import  Carga  from '../config/models/carga.js'
 
 import cors from "cors"
 
@@ -53,7 +55,7 @@ app.get('/api/trucks', async (req, res) => {
   });
   
   app.post('/api/deliveries', async (req, res) => {
-    const { truckId, driver, cargoType, value, destination, status } = req.body;
+    const { truckId, driver, cargoType, value, destination, hasInsurance, status } = req.body;
   
     try {
       // Verificar se o caminhão já está associado a uma entrega pendente
@@ -68,16 +70,15 @@ app.get('/api/trucks', async (req, res) => {
         return res.status(400).json({ message: 'O caminhão já está associado a uma entrega pendente.' });
       }
   
-      // Criar nova entrega se não houver conflito
-      const delivery = await Delivery.create({
-        truckId,
-        driver,
-        cargoType,
-        value,
-        destination,
-        status
-      });
   
+      // Verificar o número de entregas feitas pelo caminhão neste mês
+      const deliveriesThisMonth = await Delivery.countDeliveriesThisMonth(truckId);
+      if (deliveriesThisMonth >= 4) {
+        return res.status(400).json({ message: 'O caminhão já atingiu o limite de 4 entregas este mês.' });
+      }
+  
+      // Criar nova entrega
+      const delivery = await Delivery.create({ truckId, driver, cargoType, value, destination, hasInsurance, status });
       res.json(delivery);
     } catch (error) {
       res.status(500).json({ message: 'Erro ao adicionar entrega.' });
@@ -87,10 +88,31 @@ app.get('/api/trucks', async (req, res) => {
   
   app.put('/api/deliveries/:id', async (req, res) => {
     const { id } = req.params;
-    await Delivery.update(req.body, { where: { id } });
-    const updatedDelivery = await Delivery.findByPk(id);
-    res.json(updatedDelivery);
+    const { truckId, driver, cargoType, value, destination, hasInsurance, status } = req.body;
+  
+    try {
+      const delivery = await Delivery.findByPk(id);
+  
+      if (!delivery) {
+        return res.status(404).json({ message: 'Entrega não encontrada.' });
+      }
+  
+      // Verificar o número de entregas feitas pelo caminhão neste mês (se truckId for alterado)
+      if (truckId !== delivery.truckId) {
+        const deliveriesThisMonth = await Delivery.countDeliveriesThisMonth(truckId);
+        if (deliveriesThisMonth >= 4) {
+          return res.status(400).json({ message: 'O caminhão já atingiu o limite de 4 entregas este mês.' });
+        }
+      }
+  
+      // Atualizar a entrega
+      await delivery.update({ truckId, driver, cargoType, value, destination, hasInsurance, status });
+      res.json(delivery);
+    } catch (error) {
+      res.status(500).json({ message: 'Erro ao atualizar entrega.' });
+    }
   });
+  
   
   app.delete('/api/deliveries/:id', async (req, res) => {
     const { id } = req.params;
@@ -144,6 +166,18 @@ app.get('/api/trucks', async (req, res) => {
     const { id } = req.params;
     await Report.destroy({ where: { id } });
     res.json({ message: 'Report deleted' });
+  });
+
+  // Routes for Addresses
+  app.get('/api/addresses', async (req, res) => {
+    const addresses = await Address.findAll();
+    res.json(addresses);
+  });
+
+  // Routes for Cargas
+  app.get('/api/cargas', async (req, res) => {
+    const cargas = await Carga.findAll();
+    res.json(cargas);
   });
   
   // Routes for Users
