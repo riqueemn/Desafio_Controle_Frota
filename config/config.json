@@ -1,0 +1,10 @@
+{
+    "desafio_controle_frota": {
+      "username": "root",
+      "password": "",
+      "database": "desafio_controle_frota",
+      "host": "localhost",
+      "dialect": "mysql"
+    }
+  }
+  
