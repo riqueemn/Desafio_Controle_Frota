@@ -4,9 +4,8 @@ const sequelize = require('../database'); // Importa a configuração do Sequeli
 const Carga = sequelize.define('Carga', {
   tipo: {
     type: DataTypes.STRING,
-    allowNull: true,
-    unique: true
-  }
+    allowNull: false
+  },
 });
 
 module.exports = Carga;

@@ -25,6 +25,14 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cors()); // Habilita CORS para todas as rotas
 
+const nordesteStates = ['MA', 'PI', 'CE', 'RN', 'PB', 'PE', 'AL', 'SE', 'BA'];
+
+function isNordeste(destination) {
+  // Assumindo que o estado está no formato 'Cidade, UF'
+  const state = destination.split(', ')[1];
+  return nordesteStates.includes(state);
+}
+
 app.get('/api/trucks', async (req, res) => {
     const trucks = await Truck.findAll();
     res.json(trucks);
@@ -53,42 +61,79 @@ app.get('/api/trucks', async (req, res) => {
     const deliveries = await Delivery.findAll();
     res.json(deliveries);
   });
-  
+
   app.post('/api/deliveries', async (req, res) => {
-    const { truckId, driver, cargoType, value, destination, hasInsurance, status } = req.body;
-  
+    const { truckId, driverId, cargoType, value, destination, hasInsurance, status } = req.body;
+
     try {
-      // Verificar se o caminhão já está associado a uma entrega pendente
-      const existingDelivery = await Delivery.findOne({
-        where: {
-          truckId: truckId,
-          status: 'Pendente'
-        }
-      });
+      const pendingDelivery = await Delivery.findOne({ where: { truckId, status: 'Pendente' } });
   
-      if (existingDelivery) {
+      if (pendingDelivery) {
         return res.status(400).json({ message: 'O caminhão já está associado a uma entrega pendente.' });
       }
-  
-  
-      // Verificar o número de entregas feitas pelo caminhão neste mês
+
+
       const deliveriesThisMonth = await Delivery.countDeliveriesThisMonth(truckId);
       if (deliveriesThisMonth >= 4) {
         return res.status(400).json({ message: 'O caminhão já atingiu o limite de 4 entregas este mês.' });
       }
+
+
+
+      const driverDeliveriesThisMonth = await Delivery.countDeliveriesByDriverThisMonth(driverId);
+      if (driverDeliveriesThisMonth >= 2) {
+        return res.status(400).json({ message: 'O motorista já atingiu o limite de 2 entregas este mês.' });
+      }
+
+
+
+      const pendingNordesteDelivery = await Delivery.findOne({
+        where: {
+          driverId,
+          status: 'Pendente',
+          destination: 'Nordeste',
+        },
+      });
   
-      // Criar nova entrega
-      const delivery = await Delivery.create({ truckId, driver, cargoType, value, destination, hasInsurance, status });
+
+
+      if (destination == "Nordeste" && pendingNordesteDelivery) {
+        return res.status(400).json({ message: 'O motorista já possui uma entrega pendente para o Nordeste.' });
+      }
+
+
+
+  
+      let adjustedValue = value;
+      if (destination == "Nordeste") {
+        adjustedValue = value * 1.2; 
+      } else if (destination == "Argentina") {
+        adjustedValue = value * 1.4; 
+      } else if (destination == "Amazônia") {
+        adjustedValue = value * 1.3; 
+      }
+
+
+      const delivery = await Delivery.create({
+        truckId, driverId, cargoType, value: adjustedValue, destination, hasInsurance, status
+      });
       res.json(delivery);
+
+      //const { id } = req.params;
+      await Truck.update({status: "Indisponível"}, { where: { id: truckId } });
+      await Driver.update({status: "Indisponível"}, { where: { id: driverId } });
+      //const updatedTruck = await Truck.findByPk(id);
+      res.json(Truck);
+      res.json(Driver);
     } catch (error) {
+      console.log(error)
       res.status(500).json({ message: 'Erro ao adicionar entrega.' });
     }
   });
   
-  
   app.put('/api/deliveries/:id', async (req, res) => {
     const { id } = req.params;
-    const { truckId, driver, cargoType, value, destination, hasInsurance, status } = req.body;
+    const { truckId, driverId, cargoType, value, destination, hasInsurance, status } = req.body;
   
     try {
       const delivery = await Delivery.findByPk(id);
@@ -96,28 +141,77 @@ app.get('/api/trucks', async (req, res) => {
       if (!delivery) {
         return res.status(404).json({ message: 'Entrega não encontrada.' });
       }
+
+      if(status != "Concluído"){
+
+      const pendingDelivery = await Delivery.findOne({ where: { truckId, status: 'Pendente' } });
   
-      // Verificar o número de entregas feitas pelo caminhão neste mês (se truckId for alterado)
+      if (pendingDelivery && truckId !== delivery.truckId) {
+        return res.status(400).json({ message: 'O caminhão já está associado a uma entrega pendente.' });
+      }
+  
       if (truckId !== delivery.truckId) {
         const deliveriesThisMonth = await Delivery.countDeliveriesThisMonth(truckId);
         if (deliveriesThisMonth >= 4) {
           return res.status(400).json({ message: 'O caminhão já atingiu o limite de 4 entregas este mês.' });
         }
       }
+
+      const driverDeliveriesThisMonth = await Delivery.countDeliveriesByDriverThisMonth(driverId);
+      if (driverDeliveriesThisMonth >= 2) {
+        return res.status(400).json({ message: 'O motorista já atingiu o limite de 2 entregas este mês.' });
+      }
+
+
+      const pendingNordesteDelivery = await Delivery.findOne({
+        where: {
+          driverId,
+          status: 'Pendente',
+          destination: 'Nordeste',
+        },
+      });
+      if (destination == "Nordeste" && pendingNordesteDelivery && pendingNordesteDelivery.id !== id) {
+        return res.status(400).json({ message: 'O motorista já possui uma entrega pendente para o Nordeste.' });
+      }
+
+    }
+
+      let adjustedValue = value;
+      if (destination == "Nordeste") {
+        adjustedValue = value * 1.2; 
+      } else if (destination == "Argentina") {
+        adjustedValue = value * 1.4; 
+      } else if (destination == "Amazônia") {
+        adjustedValue = value * 1.3; 
+      }
+
   
-      // Atualizar a entrega
-      await delivery.update({ truckId, driver, cargoType, value, destination, hasInsurance, status });
+      await delivery.update({ truckId, driverId, cargoType, value: adjustedValue, destination, hasInsurance, status });
       res.json(delivery);
+
+      console.log(truckId)
+
+
+      if(status == "Concluído"){
+        await Truck.update({status: "Disponível"}, { where: { id: truckId } });
+        const driver = await Driver.findByPk(driverId);
+        await Driver.update({status: "Disponível", deliveriesCompleted: driver.deliveriesCompleted + 1}, { where: { id: driverId } });
+        res.json(Truck);
+        res.json(Driver);
+      }
     } catch (error) {
       res.status(500).json({ message: 'Erro ao atualizar entrega.' });
     }
   });
-  
+
   
   app.delete('/api/deliveries/:id', async (req, res) => {
     const { id } = req.params;
+    const delivery = await Delivery.findByPk(id);
     await Delivery.destroy({ where: { id } });
     res.json({ message: 'Delivery deleted' });
+    await Truck.update({status: "Disponível"}, { where: { id: delivery.truckId } });
+    await Driver.update({status: "Disponível"}, { where: { id: delivery.driverId } });
   });
   
   // Routes for Drivers
@@ -127,6 +221,7 @@ app.get('/api/trucks', async (req, res) => {
   });
   
   app.post('/api/drivers', async (req, res) => {
+    console.log(req.body)
     const driver = await Driver.create(req.body);
     res.json(driver);
   });
@@ -207,7 +302,7 @@ app.get('/api/trucks', async (req, res) => {
   app.get('/api/dashboard/summary', async (req, res) => {
     const totalTrucks = await Truck.count();
     const totalDeliveries = await Delivery.count();
-    const totalCompletedDeliveries = await Delivery.count({ where: { status: 'Concluída' } });
+    const totalCompletedDeliveries = await Delivery.count({ where: { status: 'Concluído' } });
     const totalPendingDeliveries = await Delivery.count({ where: { status: 'Pendente' } });
     
     const summary = {
@@ -260,8 +355,8 @@ app.get('/api/trucks', async (req, res) => {
   
   app.get('/api/dashboard/alerts', async (req, res) => {
     const valuableDeliveries = await Delivery.findAll({ where: { value: { [Sequelize.Op.gt]: 10000 } } });
-    const electronicsWithoutInsurance = await Delivery.findAll({ where: { cargoType: 'Eletrônicos', status: 'Sem Seguro' } });
-    const dangerousDeliveries = await Delivery.findAll({ where: { cargoType: 'Perigosos' } });
+    const electronicsWithoutInsurance = await Delivery.findAll({ where: {hasInsurance: 0 } });
+    const dangerousDeliveries = await Delivery.findAll({ where: { cargoType: 'Combustível' } });
   
     const alerts = {
       valuableDeliveries,

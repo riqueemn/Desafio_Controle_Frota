@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, Select, message } from 'antd';
+import { Table, Button, Modal, Form, Input, Select, message, Row, Col } from 'antd';
 import axios from 'axios';
 
 const { Option } = Select;
 
 const Deliveries = () => {
   const [deliveries, setDeliveries] = useState([]);
+  const [filteredDeliveries, setFilteredDeliveries] = useState([]);
   const [trucks, setTrucks] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [destinations, setDestination] = useState([]);
@@ -13,6 +14,9 @@ const Deliveries = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentDelivery, setCurrentDelivery] = useState(null);
+  const [form] = Form.useForm();
+  const [searchText, setSearchText] = useState('');
+  const [filterTruck, setFilterTruck] = useState('');
 
   useEffect(() => {
     fetchDeliveries();
@@ -22,9 +26,45 @@ const Deliveries = () => {
     fetchCargas();
   }, []);
 
+  useEffect(() => {
+    applyFilters();
+  }, [searchText, filterTruck, deliveries]);
+
+  const applyFilters = () => {
+    let filtered = deliveries;
+  
+    if (searchText) {
+      filtered = filtered.filter(delivery =>
+        delivery.destination.toLowerCase().includes(searchText.toLowerCase())
+      );
+    }
+  
+    if (filterTruck) {
+      filtered = filtered.filter(delivery => delivery.truckId === filterTruck);
+    }
+  
+    setFilteredDeliveries(filtered);
+  };
+  
   const fetchDeliveries = async () => {
     const result = await axios.get('http://localhost:3001/api/deliveries');
-    setDeliveries(result.data);
+    const deliveriesData = result.data;
+
+    // Fetch trucks and drivers data to join with deliveries
+    const trucksData = await axios.get('http://localhost:3001/api/trucks');
+    const driversData = await axios.get('http://localhost:3001/api/drivers');
+
+    const deliveriesWithDetails = deliveriesData.map(delivery => {
+      const truck = trucksData.data.find(t => t.id === delivery.truckId);
+      const driver = driversData.data.find(d => d.id === parseInt(delivery.driverId));
+      return {
+        ...delivery,
+        truckModel: truck ? truck.model + " - ("+truck.plate+")" : 'Desconhecido',
+        driverName: driver ? "("+driver.id+") - " + driver.name : 'Desconhecido',
+      };
+    });
+
+    setDeliveries(deliveriesWithDetails);
   };
 
   const fetchTrucks = async () => {
@@ -55,14 +95,24 @@ const Deliveries = () => {
     setIsModalVisible(false);
     setIsEditMode(false);
     setCurrentDelivery(null);
+    form.resetFields();
+  };
+
+  const handleAdicionarEntrega = () => {
+    handleCancel();
+    setCurrentDelivery(null);
+    form.resetFields();
+    showModal();
   };
 
   const handleSubmit = async (values) => {
+
     try {
       if (isEditMode && currentDelivery) {
         await axios.put(`http://localhost:3001/api/deliveries/${currentDelivery.id}`, values);
         message.success('Entrega atualizada com sucesso');
       } else {
+        values.status = "Pendente"
         await axios.post('http://localhost:3001/api/deliveries', values);
         message.success('Entrega adicionada com sucesso');
       }
@@ -74,7 +124,9 @@ const Deliveries = () => {
   };
 
   const handleEdit = (record) => {
+    console.log(record)
     setCurrentDelivery(record);
+    form.setFieldsValue(record);
     setIsEditMode(true);
     showModal();
   };
@@ -84,11 +136,21 @@ const Deliveries = () => {
     fetchDeliveries();
   };
 
+  const handleConcluirEntrega = async (value) => {
+    try {
+      value.status = "Concluído"
+      await axios.put(`http://localhost:3001/api/deliveries/${value.id}`, value);
+      message.success('Entrega concluída com sucesso');
+      fetchDeliveries();
+    } catch (error) {
+      message.error('Erro ao concluir a entrega');
+    }
+  };
+
   const columns = [
     { title: 'ID', dataIndex: 'id', key: 'id' },
-    { title: 'Caminhão', dataIndex: 'truckId', key: 'truckId' },
-    { title: 'Motorista', dataIndex: 'driver', key: 'driver' },
-    
+    { title: 'Caminhão', dataIndex: 'truckModel', key: 'truckModel' },
+    { title: 'Motorista', dataIndex: 'driverName', key: 'driverName' },
     {
       title: 'Tipo de Carga',
       dataIndex: 'cargoType',
@@ -107,7 +169,6 @@ const Deliveries = () => {
                 )}
               </span>
             )}
-
             {cargoType === 'Combustível' && (
               <span style={{ marginLeft: 8 }}>
                 <span style={{ color: 'red', fontWeight: 'bold' }}>(Perigoso)</span>
@@ -133,18 +194,47 @@ const Deliveries = () => {
     },
     { title: 'Destino', dataIndex: 'destination', key: 'destination' },
     { title: 'Status', dataIndex: 'status', key: 'status' },
-    { title: 'Ações', key: 'action', render: (text, record) => (
-      <>
-        <Button onClick={() => handleEdit(record)}>Editar</Button>
-        <Button onClick={() => handleDelete(record.id)} danger>Excluir</Button>
-      </>
-    ) },
+    {
+      title: 'Ações', key: 'action', render: (text, record) => (
+        <>
+          <Button onClick={() => handleEdit(record)}>Editar</Button>
+          <Button onClick={() => handleDelete(record.id)} danger>Excluir</Button>
+          {record.status !== 'Concluído' && (
+            <Button onClick={() => handleConcluirEntrega(record)} style={{ marginLeft: 8 }}>
+              Concluir
+            </Button>
+          )}
+        </>
+      )
+    },
   ];
 
   return (
     <div>
-      <Button type="primary" onClick={showModal}>Adicionar Entrega</Button>
-      <Table columns={columns} dataSource={deliveries} rowKey="id" />
+      <Row gutter={16} style={{ marginBottom: 16 }}>
+        <Col span={12}>
+          <Input
+            placeholder="Buscar por destino"
+            value={searchText}
+            onChange={e => setSearchText(e.target.value)}
+          />
+        </Col>
+        <Col span={12}>
+          <Select
+            placeholder="Filtrar por caminhão"
+            value={filterTruck}
+            onChange={value => setFilterTruck(value)}
+            style={{ width: '100%' }}
+          >
+            <Option value="">Todos os Caminhões</Option>
+            {trucks.map(truck => (
+              <Option key={truck.id} value={truck.id}>{truck.model}</Option>
+            ))}
+          </Select>
+        </Col>
+      </Row>
+      <Button type="primary" onClick={handleAdicionarEntrega}>Adicionar Entrega</Button>
+      <Table columns={columns} dataSource={filteredDeliveries} rowKey="id" />
       <Modal
         title={isEditMode ? 'Editar Entrega' : 'Adicionar Entrega'}
         visible={isModalVisible}
@@ -152,29 +242,30 @@ const Deliveries = () => {
         footer={null}
       >
         <Form
+          form={form}
           initialValues={currentDelivery}
           onFinish={handleSubmit}
         >
           <Form.Item name="truckId" label="Caminhão" rules={[{ required: true }]}>
             <Select>
               {trucks.map(truck => (
-                <Option key={truck.id} value={truck.id}>{truck.model}</Option>
+                <Option key={truck.id} value={truck.id}>{truck.model} - ({truck.plate})</Option>
               ))}
             </Select>
           </Form.Item>
-          <Form.Item name="driver" label="Motorista" rules={[{ required: true }]}>
+          <Form.Item name="driverId" label="Motorista" rules={[{ required: true }]}>
             <Select>
               {drivers.map(driver => (
-                <Option key={driver.id} value={driver.name}>{driver.name}</Option>
+                <Option key={driver.id} value={driver.id}>({driver.id}) - {driver.name}</Option>
               ))}
             </Select>
           </Form.Item>
           <Form.Item name="cargoType" label="Tipo de Carga" rules={[{ required: true }]}>
-          <Select>
+            <Select>
               {cargas.map(carga => (
                 <Option key={carga.id} value={carga.tipo}>{carga.tipo}</Option>
               ))}
-          </Select>
+            </Select>
           </Form.Item>
           <Form.Item name="value" label="Valor" rules={[{ required: true }]}>
             <Input />
@@ -192,9 +283,9 @@ const Deliveries = () => {
               <Option value={false}>Não</Option>
             </Select>
           </Form.Item>
-          <Form.Item name="status" label="Status" rules={[{ required: true }]}>
+          <Form.Item hidden visible="false" name="status" label="Status" rules={[{ required: true }]}>
             <Select>
-              <Option value="Pendente">Pendente</Option>
+              <Option value="Pendente" Select>Pendente</Option>
               <Option value="Concluída">Concluída</Option>
             </Select>
           </Form.Item>

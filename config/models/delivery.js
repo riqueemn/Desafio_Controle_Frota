@@ -15,6 +15,20 @@ class Delivery extends Model {
       },
     });
   }
+
+  static async countDeliveriesByDriverThisMonth(driver) {
+    const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const endOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
+
+    return await Delivery.count({
+      where: {
+        driverId: driver,
+        createdAt: {
+          [Op.between]: [startOfMonth, endOfMonth],
+        },
+      },
+    });
+  }
 }
 
 Delivery.init({
@@ -59,3 +73,5 @@ Delivery.init({
 });
 
 module.exports = Delivery;
+
+
