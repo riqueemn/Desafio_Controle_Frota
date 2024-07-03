@@ -1,7 +1,9 @@
 import Sequelize from 'sequelize';
-const sequelize = new Sequelize('database_development', 'root', '', {
+import mysql2 from 'mysql2';
+
+const sequelize = new Sequelize('sql7717788', 'sql7717788', 'fNvixGQhGu', {
     dialect: 'mysql',
-    host: 'localhost',
+    host: 'sql7.freemysqlhosting.net',
     port: '3306'
 })
 

@@ -1,7 +1,7 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../database.js'; // Importa a configuração do Sequelize
 
-const Truck = sequelize.define('Truck', {
+const Truck = sequelize.define('truck', {
   model: {
     type: DataTypes.STRING,
     allowNull: false

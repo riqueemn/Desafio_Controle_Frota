@@ -18,7 +18,7 @@ module.exports = (sequelize, DataTypes) => {
     role: DataTypes.STRING
   }, {
     sequelize,
-    modelName: 'Endereco',
+    modelName: 'endereco',
   });
   return Endereco;
 };
