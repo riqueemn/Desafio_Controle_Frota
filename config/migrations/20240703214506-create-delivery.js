@@ -47,15 +47,15 @@ module.exports = {
       }
     });
 
-    // Adicionando a constraint única parcial
-    await queryInterface.addConstraint('Deliveries', {
-      fields: ['truckId'],
-      type: 'unique',
-      name: 'unique_truck_pending_delivery',
-      where: {
-        status: 'Pendente'
-      }
-    });
+    // Remova esta parte para não adicionar a constraint única parcial
+    // await queryInterface.addConstraint('Deliveries', {
+    //   fields: ['truckId'],
+    //   type: 'unique',
+    //   name: 'unique_truck_pending_delivery',
+    //   where: {
+    //     status: 'Pendente'
+    //   }
+    // });
   },
   down: async (queryInterface, Sequelize) => {
     await queryInterface.dropTable('Deliveries');

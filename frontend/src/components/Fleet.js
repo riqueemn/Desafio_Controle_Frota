@@ -128,15 +128,19 @@ const Fleet = () => {
       key: 'actions',
       render: (_, record) => (
         <span>
-          <Button onClick={() => handleEditTruck(record)} type="primary">Editar</Button>
-          <Button onClick={() => handleDeleteTruck(record.id)} type="danger" style={{ marginLeft: 8 }}>Excluir</Button>
+          <Button onClick={() => handleEditTruck(record)} type="primary" style={{ marginRight: 8 }}>
+            Editar
+          </Button>
+          <Button onClick={() => handleDeleteTruck(record.id)} type="danger">
+            Excluir
+          </Button>
         </span>
       ),
     },
   ];
 
   return (
-    <div>
+    <div className="fleet">
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col span={8}>
           <Input
