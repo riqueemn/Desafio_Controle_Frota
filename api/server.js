@@ -14,8 +14,8 @@ import cors from "cors"
 import {Op, Sequelize} from 'sequelize';
 
 
-  const sequelize = new Sequelize('database_development', 'root', '', {
-    host: 'localhost',
+  const sequelize = new Sequelize('byev3uoiifqc8mqiqnsl', 'uexfcvn1ahfatxc0', 'qwrnWt2gKDjVh7lCY1L9', {
+    host: 'byev3uoiifqc8mqiqnsl-mysql.services.clever-cloud.com',
     dialect: 'mysql',
     port: '3306'
   });
