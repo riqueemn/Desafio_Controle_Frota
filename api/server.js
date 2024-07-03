@@ -11,7 +11,7 @@ import  Carga  from './config/models/carga.js'
 
 import cors from "cors"
 
-import {Op, Sequelize} from 'sequelize';
+import {Sequelize} from 'sequelize';
 
 
 const sequelize = new Sequelize('sql7717788', 'sql7717788', 'fNvixGQhGu', {
@@ -23,7 +23,6 @@ const sequelize = new Sequelize('sql7717788', 'sql7717788', 'fNvixGQhGu', {
 const app = express();
 
 app.use(bodyParser.json());
-app.use(cors()); // Habilita CORS para todas as rotas
 
 app.get('/api/trucks', async (req, res) => {
     const trucks = await Truck.findAll();
