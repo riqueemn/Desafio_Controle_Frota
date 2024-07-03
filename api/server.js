@@ -14,11 +14,11 @@ import cors from "cors"
 import {Op, Sequelize} from 'sequelize';
 
 
-  const sequelize = new Sequelize('database_development', 'root', '', {
-    host: 'localhost',
-    dialect: 'mysql',
-    port: '3306'
-  });
+const sequelize = new Sequelize('sql7717788', 'sql7717788', 'fNvixGQhGu', {
+  host: 'sql7.freemysqlhosting.net',
+  dialect: 'mysql',
+  port: '3306'
+});
 
 const app = express();
 
