@@ -91,7 +91,6 @@ const Settings = () => {
   const columns = [
     { title: 'ID', dataIndex: 'id', key: 'id' },
     { title: 'Nome', dataIndex: 'name', key: 'name' },
-    { title: 'Permissões', dataIndex: 'permissions', key: 'permissions' },
     {
       title: 'Ações',
       key: 'actions',

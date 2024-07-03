@@ -1,5 +1,5 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../database'); // Importa a configuração do Sequelize
+import { DataTypes } from 'sequelize';
+import sequelize from '../database.js'; // Importa a configuração do Sequelize
 
 const Truck = sequelize.define('Truck', {
   model: {
@@ -16,4 +16,4 @@ const Truck = sequelize.define('Truck', {
   }
 });
 
-module.exports = Truck;
+export default Truck;
