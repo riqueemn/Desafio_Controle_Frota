@@ -23,6 +23,12 @@ const sequelize = new Sequelize('sql7717788', 'sql7717788', 'fNvixGQhGu', {
 const app = express();
 
 app.use(bodyParser.json());
+app.use(bodyParser.json());
+app.use(cors({
+  origin: 'https://desafio-controle-frota-api-2-81dcsvydz-henrialbbs-projects.vercel.app', // Substitua pelo domínio da sua aplicação frontend
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 app.get('/api/trucks', async (req, res) => {
     const trucks = await Truck.findAll();
