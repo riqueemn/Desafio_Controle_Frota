@@ -69,7 +69,7 @@ Delivery.init({
   },
 }, {
   sequelize,
-  modelName: 'Delivery',
+  modelName: 'delivery',
 });
 
 export default Delivery;

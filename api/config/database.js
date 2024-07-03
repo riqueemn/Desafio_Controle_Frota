@@ -1,7 +1,9 @@
 import Sequelize from 'sequelize';
-const sequelize = new Sequelize('byev3uoiifqc8mqiqnsl', 'uexfcvn1ahfatxc0', 'qwrnWt2gKDjVh7lCY1L9', {
+import mysql2 from 'mysql2';
+
+const sequelize = new Sequelize('sql7717788', 'sql7717788', 'fNvixGQhGu', {
     dialect: 'mysql',
-    host: 'byev3uoiifqc8mqiqnsl-mysql.services.clever-cloud.com',
+    host: 'sql7.freemysqlhosting.net',
     port: '3306'
 })
 

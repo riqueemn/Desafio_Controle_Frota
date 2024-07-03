@@ -14,11 +14,11 @@ import cors from "cors"
 import {Op, Sequelize} from 'sequelize';
 
 
-  const sequelize = new Sequelize('byev3uoiifqc8mqiqnsl', 'uexfcvn1ahfatxc0', 'qwrnWt2gKDjVh7lCY1L9', {
-    host: 'byev3uoiifqc8mqiqnsl-mysql.services.clever-cloud.com',
-    dialect: 'mysql',
-    port: '3306'
-  });
+const sequelize = new Sequelize('sql7717788', 'sql7717788', 'fNvixGQhGu', {
+  host: 'sql7.freemysqlhosting.net',
+  dialect: 'mysql',
+  port: '3306'
+});
 
 const app = express();
 
