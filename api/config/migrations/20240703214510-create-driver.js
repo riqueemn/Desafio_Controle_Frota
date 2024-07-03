@@ -2,14 +2,24 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('Cargas', {
+    await queryInterface.createTable('Drivers', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      tipo: {
+      name: {
+        unique: true,
+        type: Sequelize.STRING
+      },
+      truckId: {
+        type: Sequelize.INTEGER
+      },
+      deliveriesCompleted: {
+        type: Sequelize.INTEGER
+      },
+      status: {
         type: Sequelize.STRING
       },
       createdAt: {
@@ -23,6 +33,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('Cargas');
+    await queryInterface.dropTable('Drivers');
   }
 };

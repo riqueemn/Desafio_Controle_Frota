@@ -7,20 +7,24 @@ const { Option } = Select;
 const Drivers = () => {
   const [drivers, setDrivers] = useState([]);
   const [filteredDrivers, setFilteredDrivers] = useState([]);
+  const [trucks, setTrucks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingDriver, setEditingDriver] = useState(null);
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
-  const [filterTruck, setFilterTruck] = useState('');
+  const [filterTruckModel, setFilterTruckModel] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+
 
   useEffect(() => {
     fetchDrivers();
+    fetchTrucks();
   }, []);
 
   useEffect(() => {
     applyFilters();
-  }, [searchText, filterTruck, drivers]);
+  }, [searchText, filterTruckModel, filterStatus, drivers]);
 
   const fetchDrivers = async () => {
     setLoading(true);
@@ -34,7 +38,18 @@ const Drivers = () => {
     setLoading(false);
   };
 
+  const fetchTrucks = async () => {
+    try {
+      const response = await axios.get('http://localhost:3001/api/trucks');
+      setTrucks(response.data);
+    } catch (error) {
+      message.error('Error fetching trucks');
+    }
+  };
+
   const handleAddDriver = async (values) => {
+    values.deliveriesCompleted = 0    
+    values.status = "Disponível"
     try {
       const response = await axios.post('http://localhost:3001/api/drivers', values);
       setDrivers([...drivers, response.data]);
@@ -105,8 +120,14 @@ const Drivers = () => {
       );
     }
 
-    if (filterTruck) {
-      filtered = filtered.filter(driver => driver.associatedTruck === filterTruck);
+    if (filterTruckModel) {
+      filtered = filtered.filter(driver =>
+        trucks.find(truck => truck.model === filterTruckModel && truck.id === driver.associatedTruck)
+      );
+    }
+
+    if (filterStatus) {
+      filtered = filtered.filter(truck => truck.status === filterStatus);
     }
 
     setFilteredDrivers(filtered);
@@ -115,8 +136,8 @@ const Drivers = () => {
   const columns = [
     { title: 'ID', dataIndex: 'id', key: 'id' },
     { title: 'Nome', dataIndex: 'name', key: 'name' },
-    { title: 'Caminhão Associado', dataIndex: 'associatedTruck', key: 'associatedTruck' },
     { title: 'Entregas Realizadas', dataIndex: 'deliveriesCompleted', key: 'deliveriesCompleted' },
+    { title: 'Status', dataIndex: 'status', key: 'status' },
     {
       title: 'Ações',
       key: 'actions',
@@ -139,20 +160,21 @@ const Drivers = () => {
             onChange={e => setSearchText(e.target.value)}
           />
         </Col>
-        <Col span={12}>
+
+        <Col span={8}>
           <Select
-            placeholder="Filtrar por caminhão associado"
-            value={filterTruck}
-            onChange={value => setFilterTruck(value)}
+            placeholder="Filtrar por status"
+            value={filterStatus}
+            onChange={value => setFilterStatus(value)}
             style={{ width: '100%' }}
           >
-            <Option value="">Todos os Caminhões</Option>
-            {[...new Set(drivers.map(driver => driver.associatedTruck))].map(truck => (
-              <Option key={truck} value={truck}>{truck}</Option>
-            ))}
+            <Option value="">Todos os Status</Option>
+            <Option value="Disponível">Disponível</Option>
+            <Option value="Indisponível">Em Entrega</Option>
           </Select>
-        </Col>
+      </Col>
       </Row>
+      
       <Button type="primary" onClick={() => setModalVisible(true)} style={{ marginBottom: 16 }}>
         Adicionar Motorista
       </Button>
@@ -165,12 +187,6 @@ const Drivers = () => {
       >
         <Form form={form} layout="vertical">
           <Form.Item name="name" label="Nome" rules={[{ required: true, message: 'Por favor insira o nome' }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="associatedTruck" label="Caminhão Associado" rules={[{ required: true, message: 'Por favor insira o caminhão associado' }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="deliveriesCompleted" label="Entregas Realizadas" rules={[{ required: true, message: 'Por favor insira o número de entregas realizadas' }]}>
             <Input />
           </Form.Item>
         </Form>

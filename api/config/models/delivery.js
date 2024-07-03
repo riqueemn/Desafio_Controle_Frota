@@ -1,5 +1,5 @@
-const { Model, DataTypes, Op } = require('sequelize');
-const sequelize = require('../database'); 
+import { Model, DataTypes, Op } from 'sequelize';
+import sequelize from '../database.js';
 
 class Delivery extends Model {
   static async countDeliveriesThisMonth(truckId) {
@@ -9,6 +9,20 @@ class Delivery extends Model {
     return await Delivery.count({
       where: {
         truckId,
+        createdAt: {
+          [Op.between]: [startOfMonth, endOfMonth],
+        },
+      },
+    });
+  }
+
+  static async countDeliveriesByDriverThisMonth(driver) {
+    const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const endOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
+
+    return await Delivery.count({
+      where: {
+        driverId: driver,
         createdAt: {
           [Op.between]: [startOfMonth, endOfMonth],
         },
@@ -58,4 +72,6 @@ Delivery.init({
   modelName: 'Delivery',
 });
 
-module.exports = Delivery;
+export default Delivery;
+
+

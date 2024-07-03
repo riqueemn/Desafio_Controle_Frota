@@ -1,12 +1,15 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../database'); // Importa a configuração do Sequelize
 
-const Address = sequelize.define('Address', {
+const Destino = sequelize.define('Destino', {
+  model: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
   local: {
     type: DataTypes.STRING,
-    allowNull: true,
-    unique: true
+    allowNull: false
   }
 });
 
-module.exports = Address;
+export default Destino;
