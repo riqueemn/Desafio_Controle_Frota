@@ -106,7 +106,6 @@ const Deliveries = () => {
   };
 
   const handleSubmit = async (values) => {
-
     try {
       if (isEditMode && currentDelivery) {
         await axios.put(`http://localhost:3001/api/deliveries/${currentDelivery.id}`, values);
@@ -124,7 +123,7 @@ const Deliveries = () => {
   };
 
   const handleEdit = (record) => {
-    console.log(record)
+    console.log(form)
     setCurrentDelivery(record);
     form.setFieldsValue(record);
     setIsEditMode(true);
@@ -283,7 +282,7 @@ const Deliveries = () => {
               <Option value={false}>Não</Option>
             </Select>
           </Form.Item>
-          <Form.Item hidden visible="false" name="status" label="Status" rules={[{ required: true }]}>
+          <Form.Item  visible="false" name="status" label="Status" rules={[{ required: true }]}>
             <Select>
               <Option value="Pendente" Select>Pendente</Option>
               <Option value="Concluída">Concluída</Option>

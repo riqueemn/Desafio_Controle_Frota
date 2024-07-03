@@ -2,12 +2,12 @@ import express from "express"
 import bodyParser from "body-parser"
 
 
-import  Truck  from '../config/models/truck.js'
-import  Delivery  from '../config/models/delivery.js'
-import  Driver  from '../config/models/driver.js'
-import  User  from '../config/models/user.js'
-import  Address  from '../config/models/address.js'
-import  Carga  from '../config/models/carga.js'
+import  Truck  from './config/models/truck.js'
+import  Delivery  from './config/models/delivery.js'
+import  Driver  from './config/models/driver.js'
+import  User  from './config/models/user.js'
+import  Address  from './config/models/address.js'
+import  Carga  from './config/models/carga.js'
 
 import cors from "cors"
 
@@ -24,14 +24,6 @@ const app = express();
 
 app.use(bodyParser.json());
 app.use(cors()); // Habilita CORS para todas as rotas
-
-const nordesteStates = ['MA', 'PI', 'CE', 'RN', 'PB', 'PE', 'AL', 'SE', 'BA'];
-
-function isNordeste(destination) {
-  // Assumindo que o estado está no formato 'Cidade, UF'
-  const state = destination.split(', ')[1];
-  return nordesteStates.includes(state);
-}
 
 app.get('/api/trucks', async (req, res) => {
     const trucks = await Truck.findAll();

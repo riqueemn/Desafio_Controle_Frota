@@ -1,5 +1,5 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../database'); 
+import { DataTypes } from 'sequelize';
+import sequelize from '../database.js';
 
 const Driver = sequelize.define('Drivers', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
@@ -9,6 +9,6 @@ const Driver = sequelize.define('Drivers', {
   status: DataTypes.STRING,
 });
 
-module.exports = Driver;
+export default Driver;
 
 

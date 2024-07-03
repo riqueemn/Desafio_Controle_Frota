@@ -1,5 +1,5 @@
-const { Model, DataTypes, Op } = require('sequelize');
-const sequelize = require('../database'); 
+import { Model, DataTypes, Op } from 'sequelize';
+import sequelize from '../database.js';
 
 class Delivery extends Model {
   static async countDeliveriesThisMonth(truckId) {
@@ -72,6 +72,6 @@ Delivery.init({
   modelName: 'Delivery',
 });
 
-module.exports = Delivery;
+export default Delivery;
 
 
