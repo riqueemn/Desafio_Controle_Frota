@@ -22,9 +22,12 @@ const sequelize = new Sequelize('sql7717788', 'sql7717788', 'fNvixGQhGu', {
 
 const app = express();
 
+app.use(cors({
+  origin: "*"
+}));
+
 app.use(bodyParser.json());
-app.use(bodyParser.json());
-app.use(cors());
+
 
 app.get('/api/trucks', async (req, res) => {
     const trucks = await Truck.findAll();
