@@ -26,7 +26,7 @@ const Fleet = () => {
   const fetchTrucks = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('https://desafio-controle-frota-api-2-4tlepa4k0-henrialbbs-projects.vercel.app/api/trucks');
+      const response = await axios.get('https://desafio-controle-frota-api-2-farpxg7bq-henrialbbs-projects.vercel.app/api/trucks');
       setTrucks(response.data);
       setFilteredTrucks(response.data);
     } catch (error) {
