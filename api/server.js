@@ -24,11 +24,7 @@ const app = express();
 
 app.use(bodyParser.json());
 app.use(bodyParser.json());
-app.use(cors({
-  origin: '*', // Substitua pelo domínio da sua aplicação frontend
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(cors());
 
 app.get('/api/trucks', async (req, res) => {
     const trucks = await Truck.findAll();
